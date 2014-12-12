@@ -7,7 +7,6 @@ Gem::Specification.new do |s|
   s.authors     = ["Tyler Roberts"]
   s.email       = 'tyler@westernleap.com'
   s.files       = ["lib/erb_sql_templates.rb"]
-  s.homepage    =
-    'http://github.com/bdevel/erb_sql_templates'
-  s.license       = 'MIT'
+  s.homepage    = 'http://github.com/bdevel/erb_sql_templates'
+  s.license     = 'MIT'
 end
