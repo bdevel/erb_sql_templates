@@ -7,6 +7,7 @@ require 'ostruct'
 # sql = est.render(:some_sql, :my_var => 'Foo!')
 
 class ErbSqlTemplates
+  attr_reader :connection
   
   def initialize(dir, connection)
     @directory  = dir
@@ -20,7 +21,7 @@ class ErbSqlTemplates
   
   # Returns built sql
   def render(template_name, **data)
-    scope      = TemplateScope.new(@connection, data)
+    scope      = TemplateScope.new(self, data)
     erb_string = load_template(template_name)
     renderer   = ERB.new(erb_string, 0, '>') # thread level zero, and '>' means no new lines for <%= %>
     return renderer.result(scope.get_binding)
@@ -28,12 +29,18 @@ class ErbSqlTemplates
   
   # Returns string of the filename
   def locate_template(name)
-    results = Dir.glob(@directory + "/#{name}.{sql.erb,erb}")
+    results = Dir.glob(@directory + "/#{name}.{erb.sql,sql.erb}")
     if results.length > 1
       raise Exception.new("Too many templates have the name '#{name}'. ")
     elsif results.length == 0
-      raise Exception.new("Cannot find template '#{name}.erb' or '#{name}.sql.erb' in the directory '#{@directory}'.")
+      raise Exception.new("Cannot find template '#{name}.erb.sql' in the directory '#{@directory}'.")
     else
+      # Check if they are using old file extensions. Only do it once though.
+      if @@did_send_deprecation_notice != true && results.first.match(/\.sql\.erb$/)
+        @@did_send_deprecation_notice = true
+        puts "Deprecation Notice: .sql.erb extensions for ERB SQL templates has been deprecated in favor of .erb.sql extensions."
+      end
+      
       return results.first
     end
   end
@@ -46,14 +53,18 @@ class ErbSqlTemplates
   
   
   class TemplateScope < OpenStruct
-    def initialize(connection, hash)
-      @connection = connection
+    def initialize(builder, hash)
+      @builder = builder
       super hash
+    end
+    
+    def render(template_name, **args)
+      return @builder.render(template_name, **args)
     end
     
     # helper for sanitizing sql inputs
     def h(value)
-      return @connection.quote(value)
+      return @builder.connection.quote(value)
     end
     
     # Expose private binding() method.
@@ -72,6 +83,7 @@ class ErbSqlTemplates
     
   end
   
+  @@did_send_deprecation_notice=false
 end
 
 
