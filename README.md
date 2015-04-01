@@ -12,7 +12,7 @@ Example SQL template file, `some_query.erb.sql`. Templates must have `.erb.sql` 
 -- FILE: find_user.erb.sql
 SELECT
   *,
-  <%= render '_say_hello :name => 'Bob' %> AS hello_message
+  <%= render '_say_hello' :name => 'Bob' %> AS hello_message
 FROM <%= table_name %>
 WHERE
   email = <%= h(email) %>
